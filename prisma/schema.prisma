@@ -1,0 +1,179 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Location {
+  id           String        @id @default(uuid())
+  name         String
+  companyId    String?
+  timezone     String        @default("America/Caracas")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  contacts     Contact[]
+  pipelines    Pipeline[]
+  calendars    Calendar[]
+  workflows    Workflow[]
+  agentConfigs AgentConfig[]
+}
+
+model Contact {
+  id           String        @id @default(uuid())
+  locationId   String
+  location     Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String?
+  email        String?
+  phone        String?
+  tags         String        @default("[]") // JSON string of string[]
+  customFields String        @default("{}") // JSON string of key-value attributes
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  opportunities Opportunity[]
+  appointments  Appointment[]
+  conversations Conversation[]
+
+  @@index([locationId])
+  @@index([phone])
+  @@index([email])
+}
+
+model Pipeline {
+  id         String          @id @default(uuid())
+  locationId String
+  location   Location        @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  name       String
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  stages     PipelineStage[]
+
+  @@index([locationId])
+}
+
+model PipelineStage {
+  id            String        @id @default(uuid())
+  pipelineId    String
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name          String
+  orderIndex    Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  opportunities Opportunity[]
+
+  @@index([pipelineId])
+}
+
+model Opportunity {
+  id              String        @id @default(uuid())
+  contactId       String
+  contact         Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  stageId         String
+  stage           PipelineStage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  title           String
+  monetaryValue   Float         @default(0.0)
+  status          String        @default("OPEN") // OPEN, WON, LOST, ABANDONED
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([contactId])
+  @@index([stageId])
+}
+
+model Calendar {
+  id                  String        @id @default(uuid())
+  locationId          String
+  location            Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  name                String
+  durationMinutes     Int           @default(45)
+  bufferMinutes       Int           @default(15)
+  workingDays         String        @default("[1,2,3,4,5]") // Lun a Vie
+  startHour           Int           @default(9)
+  endHour             Int           @default(18)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  appointments        Appointment[]
+
+  @@index([locationId])
+}
+
+model Appointment {
+  id         String    @id @default(uuid())
+  calendarId String
+  calendar   Calendar  @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  contactId  String
+  contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  startTime  DateTime
+  endTime    DateTime
+  status     String    @default("CONFIRMED") // CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([calendarId])
+  @@index([contactId])
+  @@index([startTime])
+}
+
+model Conversation {
+  id         String    @id @default(uuid())
+  contactId  String
+  contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel    String    @default("WEB_CHAT") // WEB_CHAT, WHATSAPP, SMS, EMAIL
+  status     String    @default("ACTIVE") // ACTIVE, RESOLVED, PAUSED
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  messages   Message[]
+
+  @@index([contactId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderType     String       // CLIENT, AI_AGENT, HUMAN_AGENT
+  body           String
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  name        String
+  triggerType String   // APPOINTMENT_BOOKED, CONTACT_CREATED, TAG_ADDED
+  actionsJson String   // JSON array of actions: [{type: 'SEND_SMS', ...}, {type: 'UPDATE_STAGE', ...}]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([locationId])
+}
+
+model AgentConfig {
+  id           String   @id @default(uuid())
+  locationId   String
+  location     Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  agentName    String   @default("Lucía")
+  systemPrompt String
+  modelName    String   @default("gemini-2.5-flash")
+  calendarId   String?
+  pipelineId   String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([locationId])
+}
