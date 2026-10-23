@@ -1,0 +1,34 @@
+{
+  "name": "ids-calendario",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema Autónomo de Calendario y Agendamiento (Paridad Google Calendar) con Motor de Citas, Detección de Colisiones, RFC 5545 iCalendar y Notificaciones por Correo",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio -p 5556"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.475.0",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.2",
+    "prisma": "^6.4.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  }
+}
